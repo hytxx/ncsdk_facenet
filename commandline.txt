@@ -1,0 +1,163 @@
+
+										Validate on LFW
+4. Align the LFW dataset
+
+for N in {1..4}; do \
+python3 src/align/align_dataset_mtcnn.py \
+./datasets/lfw/raw \
+./datasets/lfw/lfw_mtcnnpy_160 \
+--image_size 160 \
+--margin 32 \
+--random_order \
+--gpu_memory_fraction 0.25 \
+& done
+
+python3 src/align/align_dataset_mtcnn.py \
+./datasets/lfw/raw \
+./datasets/lfw/lfw_mtcnnpy_160 \
+--image_size 160 \
+--margin 32 \
+--random_order \
+--gpu_memory_fraction 0.8
+
+
+
+
+
+
+6. Run the test
+
+The test is ran using validate_on_lfw:
+
+python3 src/validate_on_lfw.py \
+./datasets/lfw/lfw_mtcnnpy_160 \
+./models/facenet/20180402-114759 \
+--distance_metric 1 \
+--use_flipped_images \
+--subtract_mean \
+--use_fixed_image_standardization
+									Train a classifier on own images
+
+
+python3 src/classifier.py TRAIN /home/universe/facenet/datasets/lfw/lfw_mtcnnpy_160 /home/universe/facenet/models/facenet/20180402-114759/20180402-114759.pb ./models/lfw_classifier.pkl --batch_size 1000 --min_nrof_images_per_class 40 --nrof_train_images_per_class 35 --use_split_dataset
+
+
+python3 src/classifier.py CLASSIFY /home/universe/facenet/datasets/lfw/lfw_mtcnnpy_160 /home/universe/facenet/models/facenet/20180402-114759/20180402-114759.pb ./models/lfw_classifier.pkl --batch_size 1000 --min_nrof_images_per_class 40 --nrof_train_images_per_class 35 --use_split_dataset
+
+
+
+
+python3 src/classifier.py TRAIN /home/universe/facenet/datasets/my_datasets/train /home/universe/facenet/models/facenet/20180402-114759/20180402-114759.pb ./models/my_classifier.pkl --batch_size 1000
+
+python3 src/classifier.py CLASSIFY /home/universe/facenet/datasets/my_datasets/train /home/universe/facenet/models/facenet/20180402-114759/20180402-114759.pb ./models/my_classifier.pkl --batch_size 1000
+
+
+Aligend my own datasets:
+
+for N in {1..4}; do \
+python3 src/align/align_dataset_mtcnn.py \
+./datasets/my_company/raw \
+./datasets/my_company/train_mtcnnpy_160 \
+--image_size 160 \
+--margin 32 \
+--random_order \
+--gpu_memory_fraction 0.2 \
+& done
+
+python3 src/align/align_dataset_mtcnn.py \
+./datasets/my_company/raw \
+./datasets/my_company/train_mtcnnpy_160 \
+--image_size 160 \
+--margin 32 \
+--random_order \
+--gpu_memory_fraction 0.8
+
+
+
+
+									Classifier training of inception resnet v1
+Face alignment
+
+python3 src/align/align_dataset_mtcnn.py \
+./datasets/lfw/raw \
+./datasets/casia/casia_maxpy_mtcnnpy_182 \
+--image_size 182 \
+--margin 44 \
+--gpu_memory_fraction 0.8
+
+
+python3 src/train_softmax.py \
+--logs_base_dir ./logs/facenet/ \
+--models_base_dir ./models/MyfacenetModel/ \
+--data_dir ./datasets/casia/casia_maxpy_mtcnnpy_182/ \
+--image_size 160 \
+--model_def models.inception_resnet_v1 \
+--lfw_dir ./datasets/lfw/lfw_mtcnnpy_160/ \
+--optimizer ADAM \
+--learning_rate -1 \
+--max_nrof_epochs 150 \
+--keep_probability 0.8 \
+--random_crop \
+--random_flip \
+--use_fixed_image_standardization \
+--learning_rate_schedule_file data/learning_rate_schedule_classifier_casia.txt \
+--weight_decay 5e-4 \
+--embedding_size 512 \
+--lfw_distance_metric 1 \
+--lfw_use_flipped_images \
+--lfw_subtract_mean \
+--validation_set_split_ratio 0.05 \
+--validate_every_n_epochs 5 \
+--prelogits_norm_loss_factor 5e-4
+
+
+python3 ../convert_facenet.py model_base=hytfacenet_20180705
+
+
+																		my company datasets
+
+
+python3 src/align/align_dataset_mtcnn.py \
+./datasets/my_company/raw/ \
+./datasets/my_company/my_company_maxpy_mtcnnpy_182 \
+--image_size 182 \
+--margin 44 \
+--gpu_memory_fraction 0.8
+
+
+python3 src/train_softmax.py \
+--logs_base_dir ./logs/my_company/ \
+--models_base_dir ./models/my_company/ \
+--data_dir ./datasets/my_company/train_mtcnnpy_160/ \
+--image_size 160 \
+--model_def models.inception_resnet_v1 \
+--optimizer ADAM \
+--gpu_memory_fraction 0.8 \
+--learning_rate -1 \
+--max_nrof_epochs 100 \
+--keep_probability 0.8 \
+--random_crop \
+--random_flip \
+--use_fixed_image_standardization \
+--learning_rate_schedule_file data/learning_rate_schedule_classifier_casia.txt \
+--weight_decay 5e-4 \
+--embedding_size 512 \
+--lfw_distance_metric 1 \
+--lfw_use_flipped_images \
+--lfw_subtract_mean \
+--validation_set_split_ratio 0.05 \
+--validate_every_n_epochs 5 \
+--prelogits_norm_loss_factor 5e-4
+
+
+
+
+
+python3 ./src/classifier.py TRAIN /home/universe/facenet/datasets/my_company/train_mtcnnpy_160 /home/universe/facenet/models/my_company/20180720-102301 ./my_company.pkl
+
+python3 ./src/classifier.py CLASSIFY /home/universe/facenet/datasets/my_company/train_mtcnnpy_160 ./mycompanyface.pb ./my_company.pkl
+
+python3 ./src/classifier.py CLASSIFY /home/universe/facenet/datasets/my_company/train_mtcnnpy_160 /home/universe/facenet/models/my_company/20180720-102301 ./my_company.pkl
+
+
+python3 src/classifier.py TRAIN /home/universe/facenet/datasets/my_company/train_mtcnnpy_160/ /home/universe/facenet/models/20180814-121930/  ./models/my_classifier20180814_ckpt24.pkl --batch_size 1000
